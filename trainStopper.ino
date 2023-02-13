@@ -29,19 +29,44 @@ void freeSlot( uint8_t address )
     }
 }
 
-void allocateSlot( uint8_t address )
+uint8_t slotInUse( uint16_t address )
 {
     for( int i = 0 ; i < nSlots ; i ++ )
     {
-        if( loco[i].address == 0xFFFF ) loco[i].address = address ;
-        return ;
+        if( loco[i].address == address ) return i;
     }
+
+    return 255 ;
+}
+
+uint8_t allocateSlot( uint8_t address )
+{
+    for( int i = 0 ; i < nSlots ; i ++ )
+    {
+        if( loco[i].address == 0xFFFF )
+        {
+            loco[i].address = address ;
+            return i ;
+        }
+    }
+    
+    return 255 ;
 }
 
 void notifyXNetLocoDrive128( uint16_t address, uint8_t speed ) // keep track of active locos and alocate slots to them.
 {
-    if( speed == 0 ) freeSlot( address ) ;
-    else             allocateSlot( address ) ;
+    if( speed == 0 )        // if speed is 0, free up the slot. Loco does not have to be stopped
+    {
+        freeSlot( address ) ;
+    }
+    else
+    { 
+        uint8_t slot = slotInUse( address ) ;       // see if slot is in use or not
+
+        if( slot == 255 ) slot = allocateSlot( address ) ; // if not yet in use, allocate a slot
+
+        loco[slot].speed = speed ;              // update speed
+    }
 }
 
 
