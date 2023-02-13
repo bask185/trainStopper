@@ -1,0 +1,4 @@
+trainStopper
+v0.0.0   Date/time:2023-02-13 20:50:32.632401
+Project assembled
+
