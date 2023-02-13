@@ -5,6 +5,7 @@ Debounce::Debounce(unsigned char _pin)
 	
 	if( _pin == 255 ) return ;
 	pinMode(_pin, INPUT_PULLUP); // take note I use a pull-up resistor by default
+	state = HIGH ;
 }
 
 unsigned char Debounce::getState() {

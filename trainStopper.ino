@@ -16,6 +16,7 @@ struct
 } loco[nSlots];
 
 uint8_t currentLoco ;
+uint8_t accelaratorCount ;
 
 void freeSlot( uint8_t address )
 {
@@ -49,7 +50,7 @@ uint8_t allocateSlot( uint8_t address )
             return i ;
         }
     }
-    
+
     return 255 ;
 }
 
@@ -63,7 +64,7 @@ void notifyXNetLocoDrive128( uint16_t address, uint8_t speed ) // keep track of 
     { 
         uint8_t slot = slotInUse( address ) ;       // see if slot is in use or not
 
-        if( slot == 255 ) slot = allocateSlot( address ) ; // if not yet in use, allocate a slot
+        if( slot == 255 ) slot = allocateSlot( address ) ; // if not yet in use, allocate a slot and get new slot number back
 
         loco[slot].speed = speed ;              // update speed
     }
@@ -89,15 +90,22 @@ void loop()
     END_REPEAT
 
     uint8_t state = masterSwitch.getState() ;
-    if( state == FALLING )
-    {
-        
-    }
-    if( state == RISING )
-    {
 
+    if( state == HIGH && accelaratorCount < nSlots )
+    {
+        REPEAT_MS(50)
+        {
+            uint16_t address = loco[accelaratorCount].address ;
+            uint8_t    speed = loco[accelaratorCount].address ;
+
+            Xnet.setSpeed( address, Loco128, speed ) ;
+
+            accelaratorCount ++ ; 
+
+        }
+        END_REPEAT
     }
-    if( state == LOW )
+    if( state == LOW )                              // keep transmitting speed messages to stop all loco's
     {
         REPEAT_MS(50)
         {
@@ -107,6 +115,7 @@ void loop()
         }
         END_REPEAT
 
+        accelaratorCount = 0 ;
     }
 
     Xnet.update() ;
