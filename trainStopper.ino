@@ -18,7 +18,7 @@ struct
 uint8_t currentLoco ;
 uint8_t accelaratorCount ;
 
-void freeSlot( uint8_t address )
+void freeSlot( uint16_t address )
 {
     for( int i = 0 ; i < nSlots ; i ++ )
     {
@@ -40,7 +40,7 @@ uint8_t slotInUse( uint16_t address )
     return 255 ;
 }
 
-uint8_t allocateSlot( uint8_t address )
+uint8_t allocateSlot( uint16_t address )
 {
     for( int i = 0 ; i < nSlots ; i ++ )
     {
@@ -52,6 +52,10 @@ uint8_t allocateSlot( uint8_t address )
     }
 
     return 255 ;
+}
+
+void notifyXNetLocoDrive28( uint16_t address, uint8_t speed )
+{
 }
 
 void notifyXNetLocoDrive128( uint16_t address, uint8_t speed ) // keep track of active locos and alocate slots to them.
@@ -79,8 +83,9 @@ void setup()
     {
         loco[i].address = 0xFFFF ;
     }
+    pinMode(13,OUTPUT) ;
 }
-
+uint8_t state ;
 void loop()
 {
     REPEAT_MS( 20 )
@@ -89,11 +94,17 @@ void loop()
     }
     END_REPEAT
 
-    uint8_t state = masterSwitch.getState() ;
+    REPEAT_MS( 10000 )
+    {
+        if( state == LOW ) state = HIGH ; else state = LOW ;
+    }
+    END_REPEAT
+
+    //uint8_t state = masterSwitch.getState() ;
 
     if( state == HIGH && accelaratorCount < nSlots )
     {
-        REPEAT_MS(50)
+        REPEAT_MS(100)
         {
             uint16_t address = loco[accelaratorCount].address ;
             uint8_t    speed = loco[accelaratorCount].address ;
@@ -101,16 +112,16 @@ void loop()
             Xnet.setSpeed( address, Loco128, speed ) ;
 
             accelaratorCount ++ ; 
-
         }
         END_REPEAT
     }
     if( state == LOW )                              // keep transmitting speed messages to stop all loco's
     {
-        REPEAT_MS(50)
+        REPEAT_MS(100)
         {
             uint16_t address = loco[currentLoco].address ;
-            Xnet.setSpeed( address, Loco128, 0 ) ;      
+            uint8_t    speed = loco[accelaratorCount].address ;
+            Xnet.setSpeed( address, Loco128, speed & 0x80 ) ; // force speed to 0, but retain direction bit.      
             if( ++ currentLoco == nSlots ) currentLoco = 0 ;
         }
         END_REPEAT
